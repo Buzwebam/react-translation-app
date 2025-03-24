@@ -54,22 +54,12 @@ const TranslationBox = () => {
     setError(null);
     
     try {
-      // Using example from documentation
-      const payload = {
-        "input_text": inputText,
-        "source_lang": sourceLang,
-        "target_lang": targetLang
-      };
-
-      console.log('Sending request with payload:', payload); // Debug log
-
       const response = await fetch('https://vulavula-services.lelapa.ai/api/v1/translate/process', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          // Try with their example token format
-          'X-CLIENT-TOKEN': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOWFmMmQxYWYtNzVkYi00YjUwLTk2ZjktMDExZTU2OWFjMmE4Iiwia2V5Y2hhaW5faWQiOiIzMjk4NjE4MC03YWUwLTRjYjYtOWI4NS05ZmE0ZTE4Y2Y3ZGQiLCJwcm9qZWN0X2lkIjoiMDYyMjliZGMtZTExMS00ZDdkLWFiNmUtOWEwOWQ5YzQ2YjNiIiwiY3JlYXRlZF9hdCI6IjIwMjUtMDMtMjRUMDY6NDI6MjkuMTg1MzYyIn0.LJzo31feViLQbzTBkLGpBIzAXFvtUnRUnQXC5ZOwAOs' || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOWFmMmQxYWYtNzVkYi00YjUwLTk2ZjktMDExZTU2OWFjMmE4Iiwia2V5Y2hhaW5faWQiOiIzMjk4NjE4MC03YWUwLTRjYjYtOWI4NS05ZmE0ZTE4Y2Y3ZGQiLCJwcm9qZWN0X2lkIjoiMDYyMjliZGMtZTExMS00ZDdkLWFiNmUtOWEwOWQ5YzQ2YjNiIiwiY3JlYXRlZF9hdCI6IjIwMjUtMDMtMjRUMDY6NDI6MjkuMTg1MzYyIn0.LJzo31feViLQbzTBkLGpBIzAXFvtUnRUnQXC5ZOwAOs'
+          'X-CLIENT-TOKEN': process.env.REACT_APP_VULAVULA_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOWFmMmQxYWYtNzVkYi00YjUwLTk2ZjktMDExZTU2OWFjMmE4Iiwia2V5Y2hhaW5faWQiOiIzMjk4NjE4MC03YWUwLTRjYjYtOWI4NS05ZmE0ZTE4Y2Y3ZGQiLCJwcm9qZWN0X2lkIjoiMDYyMjliZGMtZTExMS00ZDdkLWFiNmUtOWEwOWQ5YzQ2YjNiIiwiY3JlYXRlZF9hdCI6IjIwMjUtMDMtMjRUMDY6NDI6MjkuMTg1MzYyIn0.LJzo31feViLQbzTBkLGpBIzAXFvtUnRUnQXC5ZOwAOs'
         },
         body: JSON.stringify({
           input_text: inputText,
@@ -78,24 +68,23 @@ const TranslationBox = () => {
         })
       });
 
+      const data = await response.json();
+      console.log('API Response:', data); // Debug log
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText); // Debug log
-        throw new Error(`API Error (${response.status}): ${errorText}`);
+        throw new Error(`API Error (${response.status}): ${data.message || 'Translation failed'}`);
       }
 
-      const data = await response.json();
-      console.log('API Success Response:', data); // Debug log
-
-      if (data && data.translation && data.translation[0]) {
-        setResponse(data.translation[0].translation_text);
-        
+      // Check the structure of the response and extract the translation
+      if (data && data.translation && data.translation[0] && data.translation[0].translated_text) {
+        setResponse(data.translation[0].translated_text);
       } else {
+        console.error('Unexpected API response structure:', data);
         throw new Error('Invalid response format from API');
       }
     } catch (error) {
       console.error('Translation error:', error);
-      setError(`${error.message}\n\nPlease follow these steps to get a valid token:\n1. Visit https://docs.lelapa.ai/\n2. Sign up for an account\n3. Generate an API token from your dashboard`);
+      setError(`Translation failed: ${error.message}\n\nPlease make sure you have a valid API token.`);
       setResponse('');
     } finally {
       setLoading(false);
@@ -146,36 +135,35 @@ const TranslationBox = () => {
           placeholder="Enter text to translate..."
           rows={4}
         />
-        <button 
-          onClick={handleTranslation}
-          disabled={loading || !inputText.trim()}
-          className={loading ? 'loading' : ''}
-        >
-          {loading ? 'Translating...' : 'Translate'}
-        </button>
       </div>
 
       <div className="response-area">
-        {error ? (
+        {loading ? (
+          <div className="loading-container">
+            <span>Translating...</span>
+          </div>
+        ) : error ? (
           <div className="error-container">
             <p>{error}</p>
           </div>
-        ) : response ? (
-          <div className="response-container">
-            <h3>Translation Result:</h3>
-            <div className="translation-result">
-              <div className="original-text">
-                <h4>Original Text ({languages.find(l => l.code === sourceLang)?.name}):</h4>
-                <p>{inputText}</p>
-              </div>
-              <div className="translated-text">
-                <h4>Translated Text ({languages.find(l => l.code === targetLang)?.name}):</h4>
-                <p>{response}</p>
-              </div>
+        ) : (
+          <div className="translated-text-container">
+            <div className="translation-content">
+              <p className="translation-text">
+                {response ? response : 'Translation will appear here'}
+              </p>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
+
+      <button 
+        onClick={handleTranslation}
+        disabled={loading || !inputText.trim()}
+        className={loading ? 'loading' : ''}
+      >
+        {loading ? 'Translating...' : 'Translate'}
+      </button>
     </div>
   );
 };
