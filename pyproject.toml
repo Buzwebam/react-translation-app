@@ -1,0 +1,19 @@
+[project]
+name = "LelapaV1"
+version = "0.0.1.1.0.1"
+description = "test project for vulavula ai model by Buzwe BAM"
+authors = [
+    {name = "", email = ""},
+]
+dependencies = ["vulavula>=0.4.3", "flask>=3.1.0", "flask-cors>=5.0.1", "python-dotenv>=1.0.1"]
+requires-python = ">=3.13"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
